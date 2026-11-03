@@ -10,7 +10,7 @@ Spec Reference: docs/spec/TEMPORAL.md
 import math
 from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 
 class GateType(Enum):
@@ -238,3 +238,40 @@ class TemporalGate:
     def T_MEASURE() -> 'TemporalGate':
         """Measurement gate."""
         return TemporalGate(gate_type=GateType.T_MEASURE, params={})
+    
+    def apply_to_phase(self, phase: Tuple[float, float]) -> Tuple[float, float]:
+        """
+        TEMP-011: Apply the gate to a timer phase.
+        
+        Parameters:
+            phase: Current phase tuple (theta, phi)
+            
+        Returns:
+            New phase tuple after applying gate
+        """
+        theta, phi = phase
+        
+        if self.gate_type == GateType.T_ROTATE:
+            alpha = self.params.get("alpha", 0.0)
+            return (theta + alpha, phi)
+        elif self.gate_type == GateType.T_SPLIT:
+            beta = self.params.get("beta", 0.0)
+            return (theta, phi + beta)
+        elif self.gate_type == GateType.T_SHIFT:
+            gamma = self.params.get("gamma", 0.0)
+            return (theta + gamma, phi)
+        elif self.gate_type == GateType.T_HADAMARD:
+            # Equal probability split
+            return (math.pi/2, phi)
+        elif self.gate_type == GateType.T_ENTANGLE:
+            # Create entanglement
+            return (theta, phi + math.pi/4)
+        elif self.gate_type == GateType.T_CNOT:
+            # Conditional phase
+            return (theta, phi + math.pi)
+        elif self.gate_type == GateType.T_SWAP:
+            # Swap phases
+            return (phi, theta)
+        else:
+            # Default: no change
+            return (theta, phi)
