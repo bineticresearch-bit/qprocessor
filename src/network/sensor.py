@@ -64,6 +64,7 @@ class GlobalNetworkSensor:
         self.adapters.append(adapter)
 
     def register_adapters(self, adapters: List[ChannelAdapter]):
+        """Register several public channel adapters at once."""
         for a in adapters:
             self.register_adapter(a)
 

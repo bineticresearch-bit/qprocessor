@@ -12,6 +12,7 @@ from src.cmp.protocol import CMPFrame, MessageType
 
 
 def main():
+    """CP-2: verify two Cells can communicate via the CMP protocol."""
     print("CP-2: Cell Pair Communication")
     
     # Create two cells

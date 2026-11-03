@@ -160,6 +160,7 @@ def test_convergence_reduces_error():
 
     # Probe executor reads ground truth with small noise
     def probe(node_id, plane):
+        """Probe a node against synthetic ground truth with small noise."""
         if node_id in syn.ground_truth:
             return syn.observe(node_id, plane, noise=0.02)
         return None
@@ -200,6 +201,7 @@ def test_sensor_queries_model_not_network():
     sensor = GlobalNetworkSensor(sheaf=sheaf)
 
     def probe(node_id, plane):
+        """Probe a node against synthetic ground truth with small noise."""
         if node_id in syn.ground_truth:
             return syn.observe(node_id, plane, noise=0.02)
         return None
@@ -220,6 +222,7 @@ def test_sensor_queries_model_not_network():
 
 
 def run_all_tests():
+    """Run all network sheaf convergence tests."""
     print("=== Network Sheaf Convergence Tests ===")
     print()
     test_phase_geometry()

@@ -353,15 +353,19 @@ class TemporalEngine:
         return expired_events
     
     def get_timer(self, timer_id: str) -> Optional[Timer]:
+        """Get a timer by ID, or None if not found."""
         return self._timers.get(timer_id)
-    
+
     def get_all_timers(self) -> List[Timer]:
+        """Get all timers managed by this engine."""
         return list(self._timers.values())
-    
+
     def get_expired_timers(self) -> List[Timer]:
+        """Get all timers that have expired."""
         return [t for t in self._timers.values() if t.is_expired()]
-    
+
     def get_active_timers(self) -> List[Timer]:
+        """Get all active (non-expired) timers."""
         return [t for t in self._timers.values() if not t.is_expired()]
     
     def precision_report(self) -> Dict:

@@ -76,16 +76,19 @@ class Echo:
     
     @property
     def probability_zero(self) -> float:
+        """P(|0⟩) = cos²(θ/2) — probability of measuring the |0⟩ branch."""
         theta = self.phase[0]
         return math.cos(theta / 2) ** 2
-    
+
     @property
     def probability_one(self) -> float:
+        """P(|1⟩) = sin²(θ/2) — probability of measuring the |1⟩ branch."""
         theta = self.phase[0]
         return math.sin(theta / 2) ** 2
-    
+
     @property
     def energy(self) -> float:
+        """Energy of this echo, |amplitude|²."""
         return abs(self.amplitude) ** 2
     
     def measure_arrival(self) -> int:
@@ -119,14 +122,17 @@ class EchoDerivative:
     
     @property
     def temporal_scale_s(self) -> float:
+        """The time scale of this derivative, in seconds."""
         return self.temporal_scale_ns * 1e-9
-    
+
     @property
     def magnitude(self) -> float:
+        """Magnitude |d| of the derivative value."""
         return abs(self.value)
-    
+
     @property
     def phase_angle(self) -> float:
+        """Phase angle of the complex derivative value, in radians."""
         return cmath.phase(self.value)
     
     def __repr__(self) -> str:
@@ -184,6 +190,7 @@ class EchoCascade:
     
     @property
     def total_echoes(self) -> int:
+        """Total number of echoes in the cascade."""
         return len(self.echoes)
     
     @property
@@ -404,12 +411,14 @@ class EchoCascade:
         return result
     
     def get_echo_at_depth(self, depth: int) -> Optional[Echo]:
+        """Get the echo at a specific recursion depth, if present."""
         for echo in self.echoes:
             if echo.depth == depth:
                 return echo
         return None
-    
+
     def get_derivatives_of_order(self, order: int) -> List[EchoDerivative]:
+        """Get all computed derivatives of a given order."""
         return [d for d in self.derivatives if d.order == order]
     
     def jitter_analysis(self) -> Dict:

@@ -12,6 +12,7 @@ from src.cell.differentiation import DifferentiationEngine
 
 
 def main():
+    """CP-4: verify Cells can differentiate into specialized types."""
     print("CP-4: Cell Differentiation")
     
     types_to_test = [CellType.GPU, CellType.CPU, CellType.MEMORY, CellType.NETWORK, CellType.IO]

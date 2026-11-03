@@ -56,7 +56,8 @@ qprocessor/
 │   │   ├── DIFFERENTIATION.md     ← Cell differentiation spec
 │   │   ├── MITOSIS.md             ← Cell replication spec
 │   │   ├── COVENANT.md            ← Immutable rules spec (CREATOR-ONLY)
-│   │   └── CONSTRUCTOR.md         ← Universal constructor spec
+│   │   ├── CONSTRUCTOR.md         ← Universal constructor spec
+│   │   └── LANE-ISA.md            ← Lane framing, membrane ISA, match algebra, evolution
 │   ├── public/                    ← Public-facing documentation
 │   │   ├── ARCHITECTURE.md        ← System architecture overview
 │   │   ├── TUTORIAL.md            ← Getting started guide

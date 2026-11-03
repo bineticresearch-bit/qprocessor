@@ -29,6 +29,7 @@ from src.network.sensor import GlobalNetworkSensor
 
 
 def section(title: str):
+    """Print a section header."""
     print(f"\n{'='*70}")
     print(f"  {title}")
     print(f"{'='*70}\n")
@@ -43,6 +44,7 @@ def demo_reconstruction():
     sensor = GlobalNetworkSensor(sheaf=sheaf)
 
     def probe(node_id, plane):
+        """Probe a node against synthetic ground truth with small noise."""
         if node_id in syn.ground_truth:
             return syn.observe(node_id, plane, noise=0.02)
         return None
@@ -88,6 +90,7 @@ def demo_anomaly_detection():
     sensor = GlobalNetworkSensor(sheaf=sheaf)
 
     def probe(node_id, plane):
+        """Probe a node against synthetic ground truth with small noise."""
         if node_id in syn.ground_truth:
             return syn.observe(node_id, plane, noise=0.02)
         return None
@@ -158,6 +161,7 @@ def demo_cross_plane_inference():
 
 
 def main():
+    """Run all network sheaf demonstrations."""
     print()
     print("╔" + "═" * 68 + "╗")
     print("║" + "  Network Sheaf — Meta-Network Reconstruction Demo".center(68) + "║")

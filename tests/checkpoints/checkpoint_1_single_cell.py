@@ -12,6 +12,7 @@ from src.cell.cell import Cell, CellType
 
 
 def main():
+    """CP-1: verify a single Cell can be created with a valid shard and pisphere."""
     print("CP-1: Single Cell")
     
     # Create a cell

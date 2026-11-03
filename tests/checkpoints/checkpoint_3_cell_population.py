@@ -11,6 +11,7 @@ from src.cell.cell import Cell, CellType
 
 
 def main():
+    """CP-3: verify a population of Cells can self-organize into a connected graph."""
     print("CP-3: Cell Population")
     
     # Create a population of cells

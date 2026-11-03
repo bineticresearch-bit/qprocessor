@@ -243,6 +243,35 @@ class CellType(Enum):
 
 ---
 
+### 1.9 Lane Framing & Membrane ISA — `docs/spec/LANE-ISA.md`
+
+| ID | Function/Class | Parameters | Return | Status |
+|----|---------------|------------|--------|--------|
+| LANE-001 | `class LaneFrame` | lane_index, train_id, total_lanes, payload_40b, seq, is_final | LaneFrame | 🟡 |
+| LANE-002 | `LaneFrame.serialize() -> bytes` | none | 56-byte datagram (16B routing hdr + 40B lane, CRC32; 60B total) | 🟡 |
+| LANE-003 | `LaneFrame.deserialize(data: bytes) -> LaneFrame` | raw bytes | LaneFrame or TruncatedLaneError | 🟡 |
+| LANE-004 | `class TrainAssembler` | train_id, expected_lanes, window_ns | TrainAssembler | 🟡 |
+| LANE-005 | `TrainAssembler.feed(frame: LaneFrame) -> AssemblerState` | one lane frame | COMPLETE / PARTIAL / EXPIRED / REJECTED | 🟡 |
+| LANE-006 | `TrainAssembler.reassembled_header() -> bytes` | none (COMPLETE only) | logical header or IncompleteTrainError | 🟡 |
+| LANE-007 | `class ReassemblyPolicy` | max_buffer_trains, window_ns, on_gap: str | ReassemblyPolicy | 🟡 |
+| LANE-008 | `ReassemblyPolicy.on_expire(assembler) -> ResidualEvent` | expired assembler | residual w/ missing lanes + edge hint (sheaf input) | 🟡 |
+| ISA-001..010 | opcodes FORWARD, DIFFERENTIATE, MITOSIS, SYNC, MEASURE, RECEIPT, ROUTE_UPDATE, PHASE_BANK, EVOLVE, EVOLVE_EVAL | per LANE-ISA.md §2 table | executed op + mandatory receipt | 🟡 |
+| MATCH-001..006 | `MembranePattern`, `match()`, `PatternCompiler`, `compile()`, stage1/stage2 of TwoStageMatcher | 4-axis pattern (lane, seq, phase, lineage) | fired ops; two-stage O(1)+tolerance cost model | 🟡 |
+| EVO-001..006 | `FitnessLedger`, `delta_fitness()`, `EvolutionProposer.propose()`, `AdoptionGate.evaluate()` | ledger over receipts; monotone-per-adoption gate ε_min | proposal / adoption decision (receipt-logged) | 🟡 |
+
+**Key Properties:**
+* The packet train IS the header: 40B lanes, N unbounded; sequence number = program counter + v6 address sweep (lane k = base_addr + k)
+* Ordering is semantics; loss is control flow (reassembly expiry → sheaf residual = fault localization)
+* Version floor invariant L-I4: unknown ops degrade to RECEIPT(seal-only), never drop — concrete mechanism of COVENANT Layer 7
+* Header seal chain uses an AVANCHING keyed MAC (HASH-006, security role); non-avalanche hash keeps lineage/similarity role only — two hashes, two jobs
+* Multidimensional match = lane ∧ seq ∧ phase-window ∧ lineage; compiled to stage1 exact table + stage2 tolerance checks
+* Evolution: fitness = −(w_σ·residual_mean + w_int·integrity_failures); adoption requires Δfitness ≥ ε_min over min_receipts (monotone-per-adoption only — no global-convergence claim permitted)
+* No protocol state change without a receipt chain (EV-R3): the executable "no hidden state" invariant
+
+**Cross-spec amendments (LANE-ISA.md §5):** HASH gains HASH-006 avalanching_mac; CMP transport gains LANE_TRAIN mode (UDP/2837 v4 path, v6 extension-header path); SHEAF input set extended with LANE-008 residuals.
+
+---
+
 ## 2. Genesis Protocol (Creator-Only 🔵)
 
 ### 2.1 Genesis Signature — `docs/spec/GENESIS.md` 🔵
@@ -309,6 +338,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
   
   SHARD ← CELL (every Cell has a Shard)
   DIFFERENTIATION ← CELL (Cells differentiate)
+  LANE/ISA/MATCH/EVO ← CMP, HASH(HASH-006), TEMPORAL, SHEAF(residuals in)
 ```
 
 ### 3.2 Build Order
@@ -322,6 +352,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
 7. **DIFFERENTIATION** — Depends on CELL
 8. **MITOSIS** — Depends on CELL, HASH
 9. **GENESIS** — Depends on CELL, HASH (Creator-only)
+10. **LANE/ISA/MATCH/EVO** — Depends on CMP, HASH-006, TEMPORAL; empirical gate TC-L9 (measured σ before any precision claim ships unqualified)
 
 ---
 
@@ -330,6 +361,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-11-03 | Initial registry created |
+| 1.1 | 2026-11-03 | Added §1.9 LANE/ISA/MATCH/EVO (docs/spec/LANE-ISA.md); dependency graph + build order step 10; cross-spec amendments for HASH-006, CMP LANE_TRAIN mode, SHEAF residual inputs |
 
 ---
 

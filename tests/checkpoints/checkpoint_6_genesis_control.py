@@ -12,6 +12,7 @@ from src.genesis.genesis import DemiurgeConsole
 
 
 def main():
+    """CP-6: verify the Creator can control Cells via the Genesis protocol."""
     print("CP-6: Genesis Control")
     
     # Create Creator console

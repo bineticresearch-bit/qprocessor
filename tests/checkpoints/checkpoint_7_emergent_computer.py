@@ -12,6 +12,7 @@ from src.genesis.genesis import DemiurgeConsole
 
 
 def main():
+    """CP-7: verify differentiated Cells can form a functional emergent computer."""
     print("CP-7: Emergent Computer")
     
     # Create Creator

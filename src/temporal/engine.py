@@ -177,18 +177,46 @@ class TemporalEngine:
         target_timer_ids: List[str],
         params: Optional[Dict] = None
     ) -> None:
-        """TEMP-004: Apply a temporal gate to timers."""
+        """
+        TEMP-004: Apply a temporal gate to timers.
+
+        Accepts either a GateType enum or its string name (e.g. "T_ROTATE").
+        Branching gates (T_HADAMARD, T_SPLIT) create child timers, which
+        is how the gate population grows.
+        """
         params = params or {}
+
+        # Normalize string gate names to GateType
+        if isinstance(gate_type, str):
+            try:
+                gate_type = GateType(gate_type)
+            except ValueError:
+                raise ValueError(
+                    f"Unknown gate type: {gate_type}. "
+                    f"Valid: {[g.value for g in GateType]}"
+                )
+
         gate = TemporalGate(gate_type=gate_type, params=params)
-        
+
         for timer_id in target_timer_ids:
             if timer_id not in self._timers:
                 raise ValueError(f"Timer {timer_id} not found")
-            
+
             timer = self._timers[timer_id]
+
+            # Branching gates create children rather than just shifting phase
+            if gate_type in (GateType.T_HADAMARD, GateType.T_SPLIT):
+                child_0, child_1 = timer.branch()
+                self._timers[child_0.id] = child_0
+                self._timers[child_1.id] = child_1
+                if self.echo_enabled:
+                    child_0.emit_echo(max_depth=self.echo_depth)
+                    child_1.emit_echo(max_depth=self.echo_depth)
+                continue
+
             new_phase = gate.apply_to_phase(timer.phase)
             timer.phase = new_phase
-            
+
             # Re-emit echo with updated phase
             if self.echo_enabled:
                 timer.emit_echo(max_depth=self.echo_depth)
@@ -289,8 +317,12 @@ class TemporalEngine:
         if self.echo_enabled:
             cascade_a = timer_a.emit_echo(max_depth=self.echo_depth)
             cascade_b = timer_b.emit_echo(max_depth=self.echo_depth)
-        
-        return (timer_a, timer_b)
+
+        return {
+            "timer_a": timer_a.id,
+            "timer_b": timer_b.id,
+            "type": "PHI_PLUS",
+        }
     
     # === ECHO OPERATIONS ===
     
@@ -398,6 +430,10 @@ class TemporalEngine:
         
         return expired_events
     
+    def get_timer_count(self) -> int:
+        """TEMP-019: Get the number of timers currently managed."""
+        return len(self._timers)
+
     def get_timer(self, timer_id: str) -> Optional[Timer]:
         """Get a timer by ID."""
         return self._timers.get(timer_id)

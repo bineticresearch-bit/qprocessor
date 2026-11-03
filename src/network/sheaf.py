@@ -107,9 +107,11 @@ class Fiber:
     # ---- accessors ------------------------------------------------
 
     def get_phase(self, plane: Plane) -> Optional[Tuple[float, float]]:
+        """Get the observed phase in a plane, or None if never observed."""
         return self.phase.get(plane)
 
     def get_confidence(self, plane: Plane) -> float:
+        """Get the confidence in a plane's phase, in [0, 1] (0 if unknown)."""
         return self.confidence.get(plane, 0.0)
 
     def staleness(self, plane: Plane, now: Optional[float] = None) -> float:
@@ -205,6 +207,7 @@ class NetworkSheaf:
 
     @property
     def root(self) -> NodeId:
+        """The root node of the network hierarchy."""
         return self._root
 
     def add_node(self, node_id: NodeId) -> Fiber:
@@ -223,9 +226,11 @@ class NetworkSheaf:
         self.adjacency[b].add(a)
 
     def get_fiber(self, node_id: NodeId) -> Optional[Fiber]:
+        """Get a node's fiber, or None if the node is not in the sheaf."""
         return self.nodes.get(node_id)
 
     def neighbors(self, node_id: NodeId) -> Set[NodeId]:
+        """Get the set of nodes adjacent to a node in the base space."""
         return self.adjacency.get(node_id, set())
 
     # ---- the metric structure ---------------------------------------

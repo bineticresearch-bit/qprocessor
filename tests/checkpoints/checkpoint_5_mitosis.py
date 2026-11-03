@@ -11,6 +11,7 @@ from src.cell.cell import Cell
 
 
 def main():
+    """CP-5: verify Cells can replicate through mitosis with correct lineage."""
     print("CP-5: Cell Mitosis")
     
     # Create parent
