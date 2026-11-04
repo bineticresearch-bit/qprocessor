@@ -289,6 +289,20 @@ class CellType(Enum):
 
 **Cross-spec amendments (TISSUE.md §7):** GENESIS `GEN-003/004` extended to carry Intent Shard content; SHARD gains optional "Purpose" section + `IntentShard`; REGISTRY build order appends TISSUE.
 
+### 1.11 Provenance — Provably-Derived Self-Modification (binetic.ai) — `docs/spec/PROVENANCE.md`
+
+| ID | Function/Class | Parameters | Return | Status |
+|----|---------------|------------|--------|--------|
+| PRV-001..005 | `Receipt`, `ReceiptLedger.append()`, `.verify_chain()` | change + 64B ECDSA sig | append-only hash-chained audit trail; tamper-evident even at length 1 | 🟢 |
+| PRV-101..106 | `AdoptionGate.evaluate(candidate, subject_id, creator_signature)` | proposed self-modification + sig | adopted iff Δfitness≥ε_min AND creator-authorized AND receipted AND derived (else rejected with reasons) | 🟢 |
+| PRV-201..202 | `ExternalAuditor.audit() -> AuditVerdict` | public keys + ledger only | P-1 derivation / P-2 authorization / P-3 no-hidden-state; `provably_aligned` = all three | 🟢 |
+| PRV-301..305 | `BineticUniverse(seed, grow, gate, auditor)` | creator_key + goals/constraints/roles | the public face: build a self-modifying universe and hand any third party an independent auditor | 🟢 |
+
+**Key Properties:**
+* **Alignment as a verifiable theorem:** an external auditor holding only PUBLIC keys + receipts (never the private scalar) re-proves that every cell derives from seed, the creator authorized each change, and no state changed silently — with zero trust in the running system.
+* Composes LANE-ISA §4.2 (fitness), I-1 (creator-writable intent), EV-R3 (receipts) into one closed loop; purpose self-modification remains deferred (last door).
+* The three-primitive crypto split is complete: non-avalanche = lineage, avalanching MAC = seals, **secp256k1 ECDSA = authorization**.
+
 ---
 
 ## 2. Genesis Protocol (Creator-Only 🔵)
@@ -373,6 +387,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
 9. **GENESIS** — Depends on CELL, HASH (Creator-only)
 10. **LANE/ISA/MATCH/EVO** — Depends on CMP, HASH-006, TEMPORAL; empirical gate TC-L9 (measured σ before any precision claim ships unqualified)
 11. **TISSUE** — Depends on CELL, CMP, HASH, GENESIS (Layer 2/7), LANE-ISA §4.2; Intent Shard type + tissue-scale fitness + alignment reporting (see TISSUE.md §8)
+12. **PROVENANCE** — Depends on TISSUE, HASH(HASH-007 secp256k1), LANE-ISA §4.2; Receipt Ledger + Adoption Gate + External Auditor (see PROVENANCE.md)
 
 ---
 

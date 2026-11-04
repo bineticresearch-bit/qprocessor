@@ -37,6 +37,7 @@ from .genesis.genesis import GenesisProtocol, DemiurgeConsole
 from .tissue.tissue import Tissue, TissueType
 from .tissue.intent_shard import IntentShard, PurposeSection, Goal, SuccessModel, IntentReadOnlyError
 from .tissue.portal import Portal
+from .tissue.provenance import BineticUniverse, ReceiptLedger, AdoptionGate, ExternalAuditor
 
 __all__ = [
     # Cell
@@ -57,4 +58,5 @@ __all__ = [
     "GenesisProtocol", "DemiurgeConsole",
     # Tissue
     "Tissue", "TissueType", "IntentShard", "PurposeSection", "Portal",
+    "BineticUniverse", "ReceiptLedger", "AdoptionGate", "ExternalAuditor",
 ]

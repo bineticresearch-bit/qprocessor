@@ -313,6 +313,11 @@ Fitness operates **inside** Covenant bounds and never overrides them:
    genesis + lineage + covenant-rule signatures become 64-byte r||s verifiable by anyone
    holding Q without the private scalar. This replaces the old `sha256(private_key)` "public
    key" and corrects the misleading Ed25519 claim in the realtime tree.
+6. **PROVENANCE spec (new):** add `docs/spec/PROVENANCE.md` — the closed loop that makes a
+   self-modifying organism *auditable*: Receipt Ledger (hash-chained, EV-R3) + Adoption Gate
+   (Δfitness ∧ creator-authorized ∧ receipted ∧ derived) + External Auditor re-proving P-1/P-2/P-3
+   from public data alone. This is where §4.2's "alignment as interest" becomes a *verifiable*
+   invariant (binetic.ai).
 
 ---
 

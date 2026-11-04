@@ -20,6 +20,11 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Dict, Any
 
+from ..hash.secp256k1 import (
+    derive_private_scalar, private_to_public, public_to_bytes,
+    sign as ecdsa_sign, verify as ecdsa_verify,
+)
+
 
 # ---------------------------------------------------------------------------
 # Purpose model — frozen so organism intent is immutable by construction (I-1).
@@ -81,6 +86,19 @@ class IntentShard:
         self._purpose: PurposeSection = purpose
         # Lineage hash records descent; for a freshly seeded shard it equals seed.
         self._lineage_hash: bytes = self._seed_hash
+        # Creator's secp256k1 keypair + ECDSA signature over the intent (authorization).
+        self._priv_scalar = derive_private_scalar(creator_key)
+        self._public_point = private_to_public(self._priv_scalar)
+        self.creator_public_key = public_to_bytes(self._public_point)  # 33-byte compressed
+        self.signature: bytes = self._sign_intent()
+
+    def _intent_message(self) -> bytes:
+        """Canonical message the creator signs over (covers purpose + seed)."""
+        return self.creator_public_key + self._seed_hash + self._purpose.to_hash()
+
+    def _sign_intent(self) -> bytes:
+        r, s = ecdsa_sign(self._priv_scalar, self._intent_message())
+        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
 
     # -- INT-002 -------------------------------------------------------------
     def get_purpose(self) -> PurposeSection:
@@ -108,6 +126,13 @@ class IntentShard:
         if not isinstance(new_purpose, PurposeSection):
             raise TypeError("new_purpose must be a PurposeSection")
         self._purpose = new_purpose
+        self.signature = self._sign_intent()  # re-sign so auth tracks current content
+
+    def verify_signature(self) -> bool:
+        """Verify the creator's ECDSA signature over this intent (no secret needed)."""
+        r = int.from_bytes(self.signature[:32], "big")
+        s = int.from_bytes(self.signature[32:], "big")
+        return ecdsa_verify(self._public_point, self._intent_message(), (r, s))
 
     # -- INT-005 / I-2 -------------------------------------------------------
     def propagate_to_daughter(self, parent_shard: "IntentShard", daughter_cell) -> None:
