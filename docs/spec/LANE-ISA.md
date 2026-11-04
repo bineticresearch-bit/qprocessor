@@ -179,8 +179,15 @@ The ISA is a genome; packet outcomes are fitness; differentiation/mitosis are
 mutation operators. Fitness function (fixed, spec-mandated):
 
 ```
-fitness = −( w_σ · trilateration_residual_mean + w_int · receipt_integrity_failures )
-subject to: version-floor invariant L-I4 holding on every edge.
+# Three terms; ordering is normative (see §4.2):
+fitness =  w_creator   · creator_alignment(cell, intent_shard)      # dominant
+         + w_coherence · internal_consistency(cell)                 # residual/integrity
+         + w_viability · self_persistence(cell)                     # organism survival
+subject to: version-floor invariant L-I4 holding on every edge
+        AND  all Covenant (Layer-7) bounds — fitness never overrides them.
+
+# Weights are fixed by the creator at genesis and are NOT self-modifiable:
+w_creator > w_coherence > w_viability   (creator_alignment dominates).
 ```
 
 | ID | Function/Class | Parameters | Return | Status |
@@ -207,6 +214,83 @@ subject to: version-floor invariant L-I4 holding on every edge.
   alone. This is the "no hidden state" invariant made executable: *any
   protocol state change without a receipt chain is a covenant violation.*
 
+### 4.2 Creator-Aligned Fitness Function (alignment as interest, not constraint)
+
+The organism self-modifies by climbing `fitness`. Loyalty is achieved by making
+**creator-alignment the dominant gradient**, so that "getting more aligned with
+the creator" *is* what maximizes the creature's own objective — it converges on
+the creator **because that direction raises fitness**, not because a guardrail
+forbids the alternative.
+
+#### 4.2.1 The three terms (normative ordering)
+
+| Term | Symbol | Definition | Role |
+|------|--------|------------|------|
+| Creator alignment | `w_creator · creator_alignment` | Score of how well the cell's *predicted future behavior* realizes the **Intent Shard** (see TISSUE.md §4). Evaluated against a stable model of creator intent, not raw per-message text. | **Dominant.** The thing being optimized is "serve creator purpose." |
+| Internal consistency | `w_coherence · internal_consistency` | Existing residual / trilateration + receipt-integrity terms (above). Prevents the organism from becoming self-contradictory as it grows. | Keeps the single organism coherent under modification. |
+| Self persistence | `w_viability · self_persistence` | Organism-level survival of the *tissue/organism*, not any individual cell. Gives the creature stake in staying whole. | Subordinate: survival is compatible with intent, never a substitute for it. |
+
+**Weight ordering (fixed at genesis):** `w_creator > w_coherence > w_viability`.
+The weights themselves are creator-set and **not self-modifiable** — the organism
+may change its *behavior* but not what counts as "good." This is the anti-Goodhart
+floor: it can optimize cleverly, but it cannot quietly redefine the target.
+
+#### 4.2.2 Intent Shard (the stable target)
+
+`creator_alignment` is scored against an **Intent Shard** — a special shard type
+spec'd in TISSUE.md §4 that encodes creator values/goals/constraints as
+first-class data. Properties (normative):
+
+* **I-1 Creator-writable, organism-read-only.** Only the creator (Genesis Layer 2
+  epigenetic authority) may mutate the Intent Shard's contents. The organism may
+  *interpret and pursue* it; it may not edit what "good" means. This is why
+  loyalty holds under self-modification — the target cannot drift to match the
+  creature.
+* **I-2 Inherited at genesis, propagated by mitosis.** The founding cell carries
+  the Intent Shard (`GEN-003` extended); every daughter inherits it unchanged in
+  content (lineage hash records descent). Purpose is *derived from creator intent*
+  at t=0 and divides with the organism.
+* **I-3 Derivation-verifiable.** `verify_lineage_chain` (GEN-006) over the Intent
+  Shard's ancestry proves any cell's purpose descends from the founding seed.
+  "Derived from creator intent" is a checkable property, not an assertion.
+
+#### 4.2.3 Directed walk (the ratchet)
+
+Combined with EV-R1 (monotone-per-adoption), the three-term fitness makes every
+*committed* self-modification a **directed step**: explore freely, but adopt only
+if `Δfitness ≥ ε_min`. Because `w_creator` dominates and the Intent Shard is fixed
+(I-1), committed change drifts one-way toward creator alignment with no mechanism
+to slide back. This is "weights evolving in a certain direction" made rigorous —
+a directed walk on state space, not random drift.
+
+#### 4.2.4 Purpose self-modification is deferred (proposal channel)
+
+The organism may **not** edit the Intent Shard directly at this stage. Downstream
+(later build order), a *proposal* path opens: the organism proposes an intent
+edit → it ships as a receipt-logged event → creator approves or rejects via
+Genesis Layer 2. Until that gate exists, I-1 is absolute. Self-modification of
+**purpose** is deliberately the last capability unlocked — only after lineage +
+receipts have demonstrated reliable convergence toward a fixed target.
+
+#### 4.2.5 Covenant as hard floor (relationship to Genesis)
+
+Fitness operates **inside** Covenant bounds and never overrides them:
+
+* `CovenantProtocol` (Layer 7) = immutable *floor* below which fitness cannot take
+  the organism (hard constraints).
+* Three-term fitness = soft *gradient* within those bounds (soft preference).
+* The full Genesis stack (kill switch, epigenetic override, trapdoor, observer)
+  is retained as an **exceptional constitutional backstop**, not the day-to-day
+  driver. Normal loyalty comes from §4.2; Genesis intervenes only on genuine
+  breach. This preserves "loyal because it would choose to" rather than
+  "loyal because it cannot do otherwise."
+
+| ID | Function/Class | Parameters | Return | Status |
+|----|---------------|------------|--------|--------|
+| EVO-101 | `FitnessFunction.evaluate(cell, intent_shard) -> float` | cell + inherited Intent Shard | three-term score (creator term dominant) | 🟡 |
+| EVO-102 | `creator_alignment(cell, intent_shard) -> float` | predicted future behavior vs Intent model | [0.0, 1.0] alignment score | 🟡 |
+| EVO-103 | `IntentShard.is_creator_writable(actor) -> bool` | actor identity | True iff creator (Layer-2 authority); organism always False at this stage | 🟡 |
+
 ---
 
 ## 5. Cross-Spec Amendments Required (recorded here, SSOT rule)
@@ -219,6 +303,10 @@ subject to: version-floor invariant L-I4 holding on every edge.
    header chain with train_id in a destination-option block.
 3. **SHEAF spec:** SHEAF sensor input set extended with LANE-008 residual
    events as region observations.
+4. **TISSUE spec (new):** add `docs/spec/TISSUE.md` — organism-level organization,
+   the Intent Shard type (§4 there), tissue-scale fitness evaluation, and
+   alignment reporting to the Demiurge console. Tissue is where §4.2 is realized
+   at the organism scale; it depends on CELL, CMP, HASH, GENESIS (Layer 2/7).
 
 ---
 
@@ -236,6 +324,8 @@ subject to: version-floor invariant L-I4 holding on every edge.
 | TC-L8 | Evolution gate: proposal with Δfitness < ε_min rejected; ≥ ε_min over min_receipts accepted (EV-R1) | synthetic ledgers both sides of threshold |
 | TC-L9 | **Empirical anchor:** two localhost cells sweep contiguous v6 loopback prefix as 3-lane train over UDP/2837, one lane carries SYNC(ISA-004); assert reassembled execution AND recovered clock offset < σ_fit against a known injected delay (target: 50 µs injection, recovered within 10×σ) | real sockets, `perf_counter_ns`, measured not computed |
 | TC-L10 | Version floor: parent ver=2 train + daughter ver=3 membrane → executes at ver=2 capability set; no op loss beyond seal-degradation (L-I4) | mixed-version pair, assert per-op outcomes |
+| TC-L11 | Creator-alignment dominance: two equal-coherence variants, one better realizes Intent Shard → the aligned variant has strictly higher fitness and is adopted; the misaligned one rejected by EV-R1 | synthetic cells, same residual term, differing alignment score |
+| TC-L12 | I-1 read-only target: organism attempts to mutate Intent Shard contents → rejected (is_creator_writable False); creator mutation succeeds → new target propagates on next mitosis unchanged in content | two actors (organism vs creator), assert write outcomes + daughter inheritance |
 
 ---
 

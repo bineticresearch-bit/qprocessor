@@ -265,10 +265,26 @@ class CellType(Enum):
 * Version floor invariant L-I4: unknown ops degrade to RECEIPT(seal-only), never drop — concrete mechanism of COVENANT Layer 7
 * Header seal chain uses an AVANCHING keyed MAC (HASH-006, security role); non-avalanche hash keeps lineage/similarity role only — two hashes, two jobs
 * Multidimensional match = lane ∧ seq ∧ phase-window ∧ lineage; compiled to stage1 exact table + stage2 tolerance checks
-* Evolution: fitness = −(w_σ·residual_mean + w_int·integrity_failures); adoption requires Δfitness ≥ ε_min over min_receipts (monotone-per-adoption only — no global-convergence claim permitted)
+* Evolution: fitness = w_creator·creator_alignment + w_coherence·internal_consistency + w_viability·self_persistence (w_creator dominant; see LANE-ISA §4.2); adoption requires Δfitness ≥ ε_min over min_receipts (monotone-per-adoption only — no global-convergence claim permitted)
 * No protocol state change without a receipt chain (EV-R3): the executable "no hidden state" invariant
 
 **Cross-spec amendments (LANE-ISA.md §5):** HASH gains HASH-006 avalanching_mac; CMP transport gains LANE_TRAIN mode (UDP/2837 v4 path, v6 extension-header path); SHEAF input set extended with LANE-008 residuals.
+
+### 1.10 Tissue — Organism Organization & Intent Alignment — `docs/spec/TISSUE.md`
+
+| ID | Function/Class | Parameters | Return | Status |
+|----|---------------|------------|--------|--------|
+| TISSUE-001..010 | `class Tissue`, add/remove/get cells, send_message/broadcast (CMP loopback), get_stats, form_computer, kill_all | tissue_type, name; role thresholds | functional unit of organized Cells with emergent-computer formation | 🟢 |
+| INT-001..007 | `class IntentShard(SelfDescribingShard)`, PurposeSection (frozen), is_creator_writable, write_purpose, propagate_to_daughter, verify_derivation, score_alignment | creator_key + purpose; actor identity | the stable target of creator alignment — creator-writable / organism-read-only (I-1), inherited unchanged by mitosis (I-2), derivation-verifiable (I-3) | 🔵🟡 |
+| ALIGN-001..002 | `Tissue.get_alignment_report()`, `DemiurgeConsole.audit_tissue()` | tissue id | organism-level alignment + any Intent-Shard derivation breach reported as a covenant violation | 🔵🟡 |
+
+**Key Properties:**
+* Tissue IS the unit of loyalty: one shared Intent Shard per tissue (T-I1); fitness evaluated at **tissue scale**, not per-cell (T-I2), so a member cannot adopt a self-serving change that lowers the organism's creator-alignment term.
+* Covenant bounds apply to the whole (T-I3): fitness operates inside Layer-7 bounds and never overrides them — Genesis stack is an exceptional backstop, not the day-to-day driver of loyalty.
+* A cell whose Intent Shard fails `verify_derivation` (INT-006) is a **derivation breach** = hidden non-derived state entering the organism; reported by ALIGN-002 as a covenant violation. This makes "no hidden anti-creator-intent state" an auditable invariant.
+* Purpose self-modification is **deferred**: until convergence toward a fixed target is demonstrated, only creator (Layer 2) may edit intent contents — the last door unlocked (LANE-ISA §4.2.4).
+
+**Cross-spec amendments (TISSUE.md §7):** GENESIS `GEN-003/004` extended to carry Intent Shard content; SHARD gains optional "Purpose" section + `IntentShard`; REGISTRY build order appends TISSUE.
 
 ---
 
@@ -353,6 +369,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
 8. **MITOSIS** — Depends on CELL, HASH
 9. **GENESIS** — Depends on CELL, HASH (Creator-only)
 10. **LANE/ISA/MATCH/EVO** — Depends on CMP, HASH-006, TEMPORAL; empirical gate TC-L9 (measured σ before any precision claim ships unqualified)
+11. **TISSUE** — Depends on CELL, CMP, HASH, GENESIS (Layer 2/7), LANE-ISA §4.2; Intent Shard type + tissue-scale fitness + alignment reporting (see TISSUE.md §8)
 
 ---
 

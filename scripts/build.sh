@@ -10,9 +10,13 @@ echo ""
 
 cd "$(dirname "$0")/.."
 
-# Step 1: Run all tests
-echo "━━━ Step 1: Unit Tests ━━━"
+# Step 1: Run all tests (standard + realtime)
+echo "━━━ Step 1: Unit Tests (standard) ━━━"
 bash scripts/test.sh
+
+echo ""
+echo "━━━ Step 1b: Unit Tests (realtime / Tissue + Intent Shard + Portal) ━━━"
+bash scripts/test_realtime.sh
 echo ""
 
 # Step 2: Run reviewer

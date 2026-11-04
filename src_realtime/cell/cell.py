@@ -102,6 +102,10 @@ class Cell:
         # Message queue
         self._inbox: List[CMPFrame] = []
         self._outbox: List[CMPFrame] = []
+
+        # Intent Shard (TISSUE.md §4): the creator's seed this cell derives from.
+        # Set via set_intent_shard(); inherited unchanged by mitosis (I-2).
+        self._intent_shard = None
         
         # Record creation
         self._shard.record_operation("init", {
@@ -118,6 +122,18 @@ class Cell:
     def get_shard(self) -> SelfDescribingShard:
         """CELL-003: Get self-describing shard."""
         return self._shard
+
+    def set_intent_shard(self, intent_shard) -> None:
+        """TISSUE §4 (INT-005): attach the Intent Shard this cell derives from.
+
+        Called at genesis seeding and by mitosis propagation; content is inherited
+        unchanged in purpose — only lineage hash records descent (I-2).
+        """
+        self._intent_shard = intent_shard
+
+    def get_intent_shard(self):
+        """TISSUE §4: return this cell's Intent Shard, or None if not yet seeded."""
+        return self._intent_shard
     
     def get_pisphere(self) -> Pisphere:
         """CELL-004: Get pisphere."""

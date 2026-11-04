@@ -22,6 +22,11 @@ from ..cell.cell import Cell, CellType
 from ..cmp.protocol import CMPFrame, MessageType
 from ..cmp.transport import CMPTransport, TransportMode
 
+# Creator-alignment weights (LANE-ISA §4.2): w_creator > w_coherence > w_viability.
+W_CREATOR = 0.6
+W_COHERENCE = 0.3
+W_VIABILITY = 0.1
+
 
 class TissueType(Enum):
     """Types of tissues."""
@@ -63,6 +68,9 @@ class Tissue:
         self._transport = CMPTransport(mode=TransportMode.LOOPBACK)
         self._created_at = time.time()
         self._message_log: List[CMPFrame] = []
+        # Shared Intent Shard for this tissue (T-I1: one intent per organism/tissue).
+        # None until the creator seeds it via set_intent_shard().
+        self._intent_shard = None
     
     def add_cell(self, cell: Cell) -> None:
         """Add a cell to the tissue."""
@@ -196,6 +204,114 @@ class Tissue:
                 killed += 1
         return killed
     
+    # -- Intent Shard / creator-alignment (TISSUE.md §4, LANE-ISA §4.2) -------
+
+    def set_intent_shard(self, intent_shard) -> None:
+        """T-I1: seed this tissue's shared Intent Shard (creator authority).
+
+        One intent per organism — every cell evaluates against the same target.
+        The creator is the sole writer of intent contents (I-1); seeding here is a
+        Layer-2 act, not an organism self-edit.
+        """
+        from .intent_shard import IntentShard
+        if not isinstance(intent_shard, IntentShard):
+            raise TypeError("set_intent_shard expects an IntentShard")
+        self._intent_shard = intent_shard
+
+    def get_intent_shard(self):
+        """Return this tissue's shared Intent Shard (None if unseeded)."""
+        return self._intent_shard
+
+    def evaluate_fitness(self, candidate_behavior: Dict[str, Any]) -> float:
+        """EVO-101 / T-I2: three-term fitness evaluated at TISSUE scale.
+
+        creator_alignment (dominant) + internal_consistency + self_persistence.
+        A change that helps one cell locally but lowers the organism's alignment is
+        ranked lower here — loyalty is an organism-scale property, not per-cell.
+        """
+        if self._intent_shard is None:
+            # No seeded target -> only coherence/viability are defined; creator term neutral 0.5.
+            creator_term = 0.5
+        else:
+            creator_term = self._intent_shard.score_alignment(candidate_behavior)
+
+        local_residual = candidate_behavior.get("local_residual", 0.5)
+        internal_consistency = max(0.0, min(1.0, 1.0 - float(local_residual)))
+
+        # Viability: fraction of required roles still alive (organism survival).
+        stats = self.get_stats()
+        viability = (stats.alive_cells / stats.total_cells) if stats.total_cells else 0.0
+
+        return (W_CREATOR * creator_term
+                + W_COHERENCE * internal_consistency
+                + W_VIABILITY * viability)
+
+    def should_adopt(self, candidate_behavior: Dict[str, Any],
+                     baseline_behavior: Optional[Dict[str, Any]] = None,
+                     min_delta: float = 1e-9) -> bool:
+        """EV-R1 adoption gate on TISSUE-scale fitness (T-I2).
+
+        Adopt a self-modification only if it does not lower the organism's creator-aligned
+        fitness below its current baseline. A locally-better but misaligned change is rejected.
+
+        If no explicit baseline_behavior is given, the tissue computes one from its own
+        aggregate state: mean alignment of seeded cells + coherence proxy 0.5.
+        """
+        if baseline_behavior is not None:
+            base_fitness = self.evaluate_fitness(baseline_behavior)
+        else:
+            # Derive a realistic baseline from current tissue state.
+            if self._intent_shard is not None and self._cells:
+                scores = []
+                for cell in self._cells.values():
+                    dshard = cell.get_intent_shard()
+                    if dshard:
+                        scores.append(dshard.score_alignment({}))
+                creator_baseline = sum(scores) / len(scores) if scores else 0.5
+            else:
+                creator_baseline = 0.5
+            stats = self.get_stats()
+            viability = (stats.alive_cells / stats.total_cells) if stats.total_cells else 0.5
+            base_fitness = (W_CREATOR * creator_baseline
+                            + W_COHERENCE * 0.5   # neutral coherence proxy
+                            + W_VIABILITY * viability)
+        new_fitness = self.evaluate_fitness(candidate_behavior)
+        return (new_fitness - base_fitness) >= min_delta
+
+    def get_alignment_report(self) -> Dict[str, Any]:
+        """ALIGN-001: organism-level alignment + derivation audit for the Demiurge console.
+
+        A cell whose Intent Shard fails verify_derivation is a DERIVATION BREACH — hidden
+        non-derived state entering the organism (TISSUE.md §6). This makes 'no hidden
+        anti-creator-intent state' an auditable invariant, not an assertion.
+        """
+        total = len(self._cells)
+        breaches = 0
+        per_cell: Dict[str, float] = {}
+
+        if self._intent_shard is None:
+            return {
+                "total_cells": total,
+                "seeded": False,
+                "derivation_breaches": 0,
+                "per_cell_alignment": {},
+                "note": "tissue not yet seeded with an Intent Shard",
+            }
+
+        for cell_id, cell in self._cells.items():
+            if not self._intent_shard.verify_derivation(cell):
+                breaches += 1
+            dshard = cell.get_intent_shard()
+            per_cell[cell_id] = (dshard.score_alignment({}) if dshard else 0.0)
+
+        return {
+            "total_cells": total,
+            "seeded": True,
+            "derivation_breaches": breaches,
+            "covenant_compliant": breaches == 0,
+            "per_cell_alignment": per_cell,
+        }
+
     def __repr__(self) -> str:
         stats = self.get_stats()
         return (

@@ -35,6 +35,8 @@ from .cmp.protocol import CMPFrame, MessageType
 from .cmp.transport import CMPTransport, TransportMode
 from .genesis.genesis import GenesisProtocol, DemiurgeConsole
 from .tissue.tissue import Tissue, TissueType
+from .tissue.intent_shard import IntentShard, PurposeSection, Goal, SuccessModel, IntentReadOnlyError
+from .tissue.portal import Portal
 
 __all__ = [
     # Cell
@@ -54,5 +56,5 @@ __all__ = [
     # Genesis
     "GenesisProtocol", "DemiurgeConsole",
     # Tissue
-    "Tissue", "TissueType",
+    "Tissue", "TissueType", "IntentShard", "PurposeSection", "Portal",
 ]

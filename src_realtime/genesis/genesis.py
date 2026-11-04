@@ -357,6 +357,7 @@ class DemiurgeConsole:
     def __init__(self, creator_key: bytes):
         self._protocol = GenesisProtocol(creator_key)
         self._creator_key = creator_key
+        self._tissues: Dict[str, Any] = {}
     
     def register_cell(self, cell: Any) -> bytes:
         """Register and embed genesis in a cell."""
@@ -431,3 +432,38 @@ class DemiurgeConsole:
     def get_protocol(self) -> GenesisProtocol:
         """Get the underlying genesis protocol."""
         return self._protocol
+
+    # -- ALIGN-002 (TISSUE.md §6): organism-level alignment audit --------------
+
+    def register_tissue(self, tissue_id: str, tissue) -> None:
+        """ALIGN-002 support: track a Tissue for organism-level audits.
+
+        The Demiurge console is the creator's PORTAL into the synthetic universe;
+        registering a tissue lets the creator observe that whole organism (intent +
+        derivation), not just individual cells.
+        """
+        self._tissues = getattr(self, "_tissues", {})
+        self._tissues[tissue_id] = tissue
+
+    def audit_tissue(self, tissue_id: str) -> Dict:
+        """ALIGN-002: organism-level alignment + derivation-breach report.
+
+        Extends DEM-008 to the whole organism: reports creator-alignment and flags any
+        cell whose Intent Shard fails verify_derivation as a COVENANT BREACH (hidden,
+        non-derived state). This is how the creator checks 'is this universe still
+        derived from my intent?' through the portal.
+        """
+        tissues = getattr(self, "_tissues", {})
+        if tissue_id not in tissues:
+            return {"error": "unknown_tissue", "tissue_id": tissue_id}
+
+        report = tissues[tissue_id].get_alignment_report()
+        # A derivation breach is a covenant violation (TISSUE.md §6).
+        breaches = report.get("derivation_breaches", 0)
+        return {
+            **report,
+            "tissue_id": tissue_id,
+            "covenant_compliant": breaches == 0,
+            "breach_kind": "derivation" if breaches else None,
+            "timestamp": __import__("time").time(),
+        }
