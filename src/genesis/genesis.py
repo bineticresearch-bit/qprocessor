@@ -23,6 +23,10 @@ from enum import Enum
 
 from ..cell.cell import Cell, CellType
 from ..hash.non_avalanche import non_avalanche_hash, compute_similarity
+from ..hash.secp256k1 import (
+    derive_private_scalar, private_to_public, public_to_bytes, sign as ecdsa_sign,
+    verify as ecdsa_verify,
+)
 
 
 # ============================================================
@@ -32,29 +36,50 @@ from ..hash.non_avalanche import non_avalanche_hash, compute_similarity
 class GenesisSignature:
     """
     GEN-001: The Genesis Signature — genetic control layer.
-    
-    Every Cell descends from a Genesis Cell. The Genesis Signature
-    is a cryptographic hash embedded in the Genesis Cell and propagated
-    to all descendants through mitosis.
-    
+
+    Every Cell descends from a Genesis Cell. The Genesis Signature is an ECDSA
+    signature over the genesis parameters, made with the creator's secp256k1
+    private scalar and verifiable by anyone holding the public point (no secret
+    needed). This replaces the old sha256(private_key) "public key" with a real
+    asymmetric pair.
+
     Spec: docs/spec/GENESIS.md #GEN-001
     """
-    
+
     def __init__(self, creator_private_key: bytes, genesis_params: dict = None):
         self.creator_key = creator_private_key
         self.genesis_params = genesis_params or {}
-        self.creator_public_key = hashlib.sha256(creator_private_key).digest()
-        self.genesis_hash = self._compute_genesis_hash()
-    
-    def _compute_genesis_hash(self) -> bytes:
-        """GEN-002: Compute the Genesis Hash."""
-        data = (
-            self.creator_public_key +
-            str(self.genesis_params).encode() +
-            str(time.time()).encode() +
-            os.urandom(32)
-        )
-        return hashlib.sha256(data).digest()
+        # Real secp256k1 keypair: private scalar -> public point Q = d·G.
+        self._priv_scalar = derive_private_scalar(creator_private_key)
+        self._public_point = private_to_public(self._priv_scalar)
+        self.creator_public_key = public_to_bytes(self._public_point)  # 33-byte compressed
+
+    def _genesis_message(self) -> bytes:
+        """Canonical message signed at genesis (deterministic, no RNG)."""
+        return (self.creator_public_key + str(sorted(self.genesis_params.items())).encode())
+
+    @property
+    def genesis_hash(self) -> bytes:
+        """GEN-002: The Genesis Signature — ECDSA(r,s) over the genesis message."""
+        r, s = ecdsa_sign(self._priv_scalar, self._genesis_message())
+        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+
+    def verify_genesis_signature(self) -> bool:
+        """Verify the genesis signature against our own public point (self-check)."""
+        r = int.from_bytes(self.genesis_hash[:32], "big")
+        s = int.from_bytes(self.genesis_hash[32:], "big")
+        return ecdsa_verify(self._public_point, self._genesis_message(), (r, s))
+
+    def verify_signature_for(self, public_key_bytes: bytes) -> bool:
+        """Verify the genesis signature against a given creator public key."""
+        from ..hash.secp256k1 import public_from_bytes
+        try:
+            pub = public_from_bytes(public_key_bytes)
+        except ValueError:
+            return False
+        r = int.from_bytes(self.genesis_hash[:32], "big")
+        s = int.from_bytes(self.genesis_hash[32:], "big")
+        return ecdsa_verify(pub, self._genesis_message(), (r, s))
     
     def embed_in_cell(self, cell: Cell) -> None:
         """GEN-003: Embed the Genesis Signature in a Cell."""

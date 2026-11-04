@@ -31,8 +31,11 @@ This registry is the **master index** of ALL specifications in the CELLULARIS sy
 | HASH-003 | `verify_lineage(child_hash: bytes, parent_hash: bytes) -> bool` | child, parent hashes | bool | 🟡 |
 | HASH-004 | `hash_with_position(data: bytes, lattice_coords: tuple) -> bytes` | data, coordinates | 32-byte hash | 🟡 |
 | HASH-005 | `hash_with_temporal(data: bytes, timestamp_ns: int) -> bytes` | data, timestamp | 32-byte hash | 🟡 |
+| HASH-007 | `secp256k1`: `private_to_public(d)`, `sign(d, msg) -> (r,s)`, `verify(Q, msg, sig)` | private scalar / public point + message | curve keypair + ECDSA signature/verification (RFC 6979 deterministic k, low-s) | 🟢 |
 
 **Key Properties:**
+- Three primitives, three jobs: non-avalanche = lineage/similarity; avalanching MAC (HASH-006)
+  = seal-chain security; **secp256k1 ECDSA (HASH-007)** = asymmetric creator signatures.
 - Similar inputs → similar outputs (non-avalanche)
 - Parent hash influences child hash (lineage preservation)
 - Position is encoded in hash (spatial awareness)

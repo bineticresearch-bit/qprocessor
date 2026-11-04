@@ -307,6 +307,12 @@ Fitness operates **inside** Covenant bounds and never overrides them:
    the Intent Shard type (§4 there), tissue-scale fitness evaluation, and
    alignment reporting to the Demiurge console. Tissue is where §4.2 is realized
    at the organism scale; it depends on CELL, CMP, HASH, GENESIS (Layer 2/7).
+5. **GENESIS / HASH spec:** Genesis signatures migrate from HMAC-SHA256 (shared-secret)
+   to **secp256k1 ECDSA** over a real asymmetric keypair (`src/hash/secp256k1.py`, pure-Python,
+   zero deps). Creator public key becomes the compressed curve point Q = d·G (33 bytes);
+   genesis + lineage + covenant-rule signatures become 64-byte r||s verifiable by anyone
+   holding Q without the private scalar. This replaces the old `sha256(private_key)` "public
+   key" and corrects the misleading Ed25519 claim in the realtime tree.
 
 ---
 

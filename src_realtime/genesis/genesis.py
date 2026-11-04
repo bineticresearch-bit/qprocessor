@@ -12,7 +12,8 @@ Implements all 7 layers of Creator control:
 - Layer 7: Covenant Protocol (consensus control)
 
 REAL IMPLEMENTATION:
-- Ed25519 cryptographic signatures (via hashlib/hmac)
+- secp256k1 ECDSA signatures (pure-Python curve, RFC 6979 deterministic k) —
+  real asymmetric keypair; verification needs only the public point.
 - Real heartbeat mechanism with time.monotonic()
 - Actual kill switch enforcement
 - Verifiable audit trail
@@ -24,6 +25,11 @@ import time
 import hashlib
 import hmac
 import os
+
+from ..hash.secp256k1 import (
+    derive_private_scalar, private_to_public, public_to_bytes,
+    sign as ecdsa_sign, verify as ecdsa_verify,
+)
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -82,7 +88,10 @@ class GenesisProtocol:
             raise ValueError("Creator key must be at least 16 bytes")
         
         self._creator_key = creator_key
-        self._creator_public_key = hashlib.sha256(creator_key).digest()
+        # Real secp256k1 keypair: private scalar -> public point Q = d·G.
+        self._priv_scalar = derive_private_scalar(creator_key)
+        self._public_point = private_to_public(self._priv_scalar)
+        self._creator_public_key = public_to_bytes(self._public_point)  # 33-byte compressed
         
         # Cell registry
         self._cells: Dict[str, Any] = {}
@@ -105,12 +114,23 @@ class GenesisProtocol:
     
     def compute_genesis_hash(self, cell_id: str, params: Dict) -> bytes:
         """
-        GEN-002: Compute genesis hash for a cell.
-        
-        Uses HMAC-SHA256 with creator key.
+        GEN-002: Compute the genesis signature for a cell.
+
+        ECDSA over secp256k1 with the creator's private scalar; returns r||s (64 bytes).
+        Verifiable by anyone holding the public point — no shared secret required.
         """
-        data = cell_id.encode() + str(params).encode()
-        return hmac.new(self._creator_key, data, hashlib.sha256).digest()
+        data = cell_id.encode() + str(sorted(params.items())).encode()
+        r, s = ecdsa_sign(self._priv_scalar, data)
+        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+
+    def verify_genesis_signature(self, cell_id: str, params: Dict, signature: bytes) -> bool:
+        """Verify a genesis signature against the creator's public point."""
+        if len(signature) != 64:
+            return False
+        data = cell_id.encode() + str(sorted(params.items())).encode()
+        r = int.from_bytes(signature[:32], "big")
+        s = int.from_bytes(signature[32:], "big")
+        return ecdsa_verify(self._public_point, data, (r, s))
     
     def embed_in_cell(self, cell: Any) -> bytes:
         """
@@ -159,12 +179,11 @@ class GenesisProtocol:
         daughter_id = daughter.get_id()
         
         if parent_id in self._genesis_signatures:
-            # Daughter inherits parent's genesis hash
+            # Daughter inherits a lineage signature chained to the parent's.
             parent_sig = self._genesis_signatures[parent_id]
             daughter_data = daughter_id.encode() + parent_sig
-            daughter_hash = hmac.new(
-                self._creator_key, daughter_data, hashlib.sha256
-            ).digest()
+            r, s = ecdsa_sign(self._priv_scalar, daughter_data)
+            daughter_hash = r.to_bytes(32, "big") + s.to_bytes(32, "big")
             self._genesis_signatures[daughter_id] = daughter_hash
             self._cells[daughter_id] = daughter
             self._heartbeats[daughter_id] = time.monotonic()
@@ -223,11 +242,8 @@ class GenesisProtocol:
             f"{cell_id}:{mark_type.value}:{time.time()}".encode()
         ).hexdigest()[:16]
         
-        signature = hmac.new(
-            self._creator_key,
-            mark_id.encode() + str(params).encode(),
-            hashlib.sha256
-        ).digest()
+        r, s = ecdsa_sign(self._priv_scalar, mark_id.encode() + str(sorted(params.items())).encode())
+        signature = r.to_bytes(32, "big") + s.to_bytes(32, "big")
         
         mark = EpigeneticMark(
             mark_id=mark_id,
@@ -259,11 +275,8 @@ class GenesisProtocol:
             f"{rule_type}:{time.time()}".encode()
         ).hexdigest()[:16]
         
-        signature = hmac.new(
-            self._creator_key,
-            rule_id.encode() + str(params).encode(),
-            hashlib.sha256
-        ).digest()
+        r, s = ecdsa_sign(self._priv_scalar, rule_id.encode() + str(sorted(params.items())).encode())
+        signature = r.to_bytes(32, "big") + s.to_bytes(32, "big")
         
         rule = CovenantRule(
             rule_id=rule_id,
