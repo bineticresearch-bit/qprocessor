@@ -298,6 +298,19 @@ class CellType(Enum):
 | PRV-201..202 | `ExternalAuditor.audit() -> AuditVerdict` | public keys + ledger only | P-1 derivation / P-2 authorization / P-3 no-hidden-state; `provably_aligned` = all three | 🟢 |
 | PRV-301..305 | `BineticUniverse(seed, grow, gate, auditor)` | creator_key + goals/constraints/roles | the public face: build a self-modifying universe and hand any third party an independent auditor | 🟢 |
 
+### 1.12 Triangulated Signature & Sub-Hardware Resolution — `docs/spec/TRIANGULATE.md`
+
+| ID | Function/Class | Parameters | Return | Status |
+|----|---------------|------------|--------|--------|
+| TRI-001..004 | `forward_phasor`, `echo_comb`, `combined_signal`, `recover_delta(ts_real, observed)` | time + injected delay; real-clock timestamps | echo-phase vernier — resolves sub-ns δ to ps precision (G2) | 🟢 |
+| TRI-101..103 | `project(S,axis)`, `triangulate(Mf,Me,θf,θe)`, `signature_gate(expected, axes)` | signature point + two non-parallel phase axes | recover op signature (ψ + \|S\|); trigonometric gate decision | 🟢/🟡 |
+| TRI-201 | `dual_arm_delta(base_ns, delta_true_ns)` | reference interval + injected delay | sub-floor δ via common-mode cancellation (G1) | 🟢 |
+
+**Key Properties:**
+* **Resolve by geometry, not faster timing.** Two measured guarantees at their proven levels: G1 dual-arm error ≈ 217–242 ns (< single-timer ≈ 284–317 ns); G2 echo-phase recovers sub-ns δ to tens-of-ps precision (~1e4× below the ~300–400 ns floor), bounded by SNR.
+* The `Δt_base·α^N` formula is a CEILING; TC-TL9 (runnable on any machine) proves operation in the ps regime with real-clock sampling — so public docs cite *measured* numbers, not theoretical ones.
+* Trigonometric logic gate = "does this signal's triangulated signature land on the expected op point within tolerance?" — replaces if/else with a geometric decision (T-S1 amplitude required; T-S2 non-degenerate axes; T-S3 noise-graceful).
+
 **Key Properties:**
 * **Alignment as a verifiable theorem:** an external auditor holding only PUBLIC keys + receipts (never the private scalar) re-proves that every cell derives from seed, the creator authorized each change, and no state changed silently — with zero trust in the running system.
 * Composes LANE-ISA §4.2 (fitness), I-1 (creator-writable intent), EV-R3 (receipts) into one closed loop; purpose self-modification remains deferred (last door).
@@ -388,6 +401,7 @@ HASH ← PISPHERE ← CELL ← CMP ← MITOSIS
 10. **LANE/ISA/MATCH/EVO** — Depends on CMP, HASH-006, TEMPORAL; empirical gate TC-L9 (measured σ before any precision claim ships unqualified)
 11. **TISSUE** — Depends on CELL, CMP, HASH, GENESIS (Layer 2/7), LANE-ISA §4.2; Intent Shard type + tissue-scale fitness + alignment reporting (see TISSUE.md §8)
 12. **PROVENANCE** — Depends on TISSUE, HASH(HASH-007 secp256k1), LANE-ISA §4.2; Receipt Ledger + Adoption Gate + External Auditor (see PROVENANCE.md)
+13. **TRIANGULATE** — Depends on TEMPORAL, PISPHERE; echo-phase vernier (G2) + dual-arm difference (G1) + signature triangulation gate (see TRIANGULATE.md); TC-TL9 empirical gate runnable on any machine
 
 ---
 

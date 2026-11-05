@@ -318,6 +318,11 @@ Fitness operates **inside** Covenant bounds and never overrides them:
    (Δfitness ∧ creator-authorized ∧ receipted ∧ derived) + External Auditor re-proving P-1/P-2/P-3
    from public data alone. This is where §4.2's "alignment as interest" becomes a *verifiable*
    invariant (binetic.ai).
+7. **TRIANGULATE spec (new):** add `docs/spec/TRIANGULATE.md` — sub-hardware temporal resolution by
+   geometry, not faster timing: G2 echo-phase vernier recovers sub-ns deltas to tens-of-ps precision
+   (~1e4× below the measured clock floor) and G1 dual-arm difference cancels common-mode drift. This is
+   what makes TC-L9's "ps from µs hardware" claim *measured* (runnable on any machine), replacing the
+   theoretical `Δt_base·α^N` qualifier in public docs.
 
 ---
 
