@@ -70,7 +70,7 @@ ai.create_cell(CellRole.MEMORY)
 ai.create_cell(CellRole.ACTION)
 
 output = ai.think({"type": "sensor", "value": 42})
-print(ai.get_temporal_analysis())   # picosecond-level precision
+print(ai.get_temporal_analysis())   # ps-scale computed ceiling (measured ~ns floor)
 ```
 
 ## 6. Network Sheaf

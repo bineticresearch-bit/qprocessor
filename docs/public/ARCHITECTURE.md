@@ -26,9 +26,12 @@ This document describes the system architecture at a high level.
 - **Genesis Protocol** (`src/genesis/`) — seven layers of creator control:
   genesis signature, epigenetic override, temporal kill switch, steganographic
   channel, trapdoor hash, observer privilege, and covenant protocol.
-- **Echo Cascades** (`src/temporal/echo.py`) — hyperfractal temporal
-  precision: `Δt_effective = Δt_base × α^N`, achieving picosecond resolution
-  from microsecond hardware.
+- **Echo Cascades** (`src/temporal/echo.py`) + **TRIANGULATE vernier**
+  (`src_realtime/temporal/signature.py`) — hyperfractal temporal precision: a
+  *computed* ceiling of `Δt_effective = Δt_base × α^N` (picosecond-scale from
+  microsecond hardware). Measured floor on standard macOS hardware is ~83–167 ns;
+  the `ps` figure ships unqualified only once TC-TL9 recovers an injected delay
+  within measured σ (D³ no-overclaim rule; see `docs/spec/TRIANGULATE.md`).
 
 ### Computation Core
 

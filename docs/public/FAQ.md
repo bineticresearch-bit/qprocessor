@@ -13,7 +13,8 @@ quantum-inspired temporal computing and hyperfractal precision.
 Three things:
 
 1. **Time is the computation.** Temporal gates operate on timers; the
-   echo cascade achieves picosecond precision from microsecond hardware.
+   echo cascade reaches a *computed* picosecond-scale ceiling from microsecond
+   hardware (measured floor ~83–167 ns — see below).
 2. **Cells are self-describing.** Every computational unit carries a shard
    with complete provenance — identity, lineage, operations, receipts.
 3. **The network sheaf** models the global network from public observation
@@ -27,7 +28,13 @@ A timer event produces a cascade of self-similar echoes at geometrically
 decreasing intervals. Analyzing the interference pattern and computing
 derivatives across recursion depths resolves features below the hardware
 resolution: `Δt_effective = Δt_base × α^N`. With α=0.1 and N=6, a 1μs base
-resolution becomes 1ps. See `docs/spec/ECHO.md`.
+resolution *computes* to 1ps — but that is a **formula (ceiling), not yet a
+measurement**. The TRIANGULATE echo-phase vernier makes the claim measurable on
+standard hardware: it currently recovers injected delays to a measured floor of
+~83–167 ns, and per our D³ no-overclaim rule the `ps` figure ships unqualified only
+once TC-TL9 recovers an injected delay within measured σ. See `docs/spec/ECHO.md`
+and `docs/spec/TRIANGULATE.md`; run `scripts/benchmark.py` to see computed vs
+measured side by side.
 
 ### Is this real quantum computing?
 

@@ -38,15 +38,19 @@ bash scripts/review.sh
 ## Demos
 
 ```bash
-python3 examples/demo_echo_hyperfractal.py   # picosecond precision from μs hardware
+python3 examples/demo_echo_hyperfractal.py   # ps-scale computed ceiling; measured ~ns floor on std HW
 python3 examples/cellular_ai_demo.py         # self-organizing AI
 python3 examples/network_sheaf_demo.py       # meta-network reconstruction
 ```
 
 ## Key results
 
-- **Temporal precision:** 0.010 ps effective resolution from microsecond
-  hardware via hyperfractal echo cascades (`Δt_eff = Δt_base × α^N`)
+- **Temporal precision:** picosecond-scale *computed* ceiling
+  (`Δt_eff = Δt_base × α^N`; e.g. 1 μs base → ~1 ps at N=6) from microsecond
+  hardware via hyperfractal echo cascades and the TRIANGULATE echo-phase vernier.
+  **Measured floor on standard macOS hardware: ~83–167 ns** — the marquee `ps`
+  figure is a formula until TC-TL9 recovers an injected delay within measured σ
+  (D³ no-overclaim rule; see `docs/spec/TRIANGULATE.md`, `scripts/benchmark.py`).
 - **Network reconstruction:** the sheaf model reconstructs a network to 0.142
   error having measured only ~18% of it (see
   `tests/unit/test_network_sheaf.py`)
